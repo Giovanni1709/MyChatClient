@@ -5,7 +5,9 @@ public class OKMessage extends Message {
 
     public OKMessage(String content) {
         super("+OK", content);
-        confirmedMessage = Message.create(content);
+        if (!content.equals("goodbye")) {
+            confirmedMessage = Message.create(content);
+        }
     }
 
     public OKMessage(Message message) {
