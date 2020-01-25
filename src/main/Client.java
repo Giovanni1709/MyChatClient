@@ -23,6 +23,7 @@ public class Client extends Thread {
     private boolean runApp;
     private boolean messageConfirmed = false;
     private String group;
+    private String key;
 
     private Reader readerThread;
 
@@ -74,9 +75,14 @@ public class Client extends Thread {
     }
 
     public boolean handshake() {
-        Message message = Message.create(readFromServer());
-        if (message instanceof Message) {
-            System.out.println(message.getContent());
+        Message message = null;
+        try {
+            message = Message.create(reader.readLine());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (message instanceof HELOMessage) {
+            key = message.getContent();
             return true;
         }
         System.out.println("Wrong protocol.");
@@ -279,7 +285,6 @@ public class Client extends Thread {
 
     private void getAvailableGroups() {
         sendToServer(new GROUPMessage(new LISTMessage()));
-
         try {
             wait(10000);
         } catch (InterruptedException e) {
@@ -356,14 +361,15 @@ public class Client extends Thread {
     }
 
     public void sendToServer(Message message) {
-        System.out.println("sent:" + message.toStringForm());
-        writer.println(message.toStringForm());
+        String encryptedMessage = AES.encrypt(message.toStringForm(), key);
+//        System.out.println("sent:" + encryptedMessage);
+        writer.println(encryptedMessage);
     }
 
     public String readFromServer() {
         try {
-            String message = reader.readLine();
-            System.out.println("received: " +message);
+            String message = AES.decrypt(reader.readLine(), key);
+//            System.out.println("received: " +message);
             return message;
         } catch (IOException e) {
             e.printStackTrace();
